@@ -7,6 +7,13 @@
     "text": "This is a post with executable code."
   },
   {
+    "objectID": "posts/2022-02-24-audio-filtering.html",
+    "href": "posts/2022-02-24-audio-filtering.html",
+    "title": "Audio Filtering",
+    "section": "",
+    "text": "Basic Imports\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport torch\nimport seaborn as sns\nfrom functools import partial\n\nsns.reset_defaults()\nsns.set_context(context=\"talk\", font_scale=1)\n%matplotlib inline\n%config InlineBackend.figure_format='retina'\n\n\nimport librosa\ny, sr = librosa.load(\"/Users/nipun/Downloads/external-sensors_data_audio_audacity_recorded-mask-tidal-breathing.wav\")\n\n\nplt.plot(y), sr\n\n([&lt;matplotlib.lines.Line2D at 0x139db2490&gt;], 22050)\n\n\n\n\n\n\nfrom scipy import signal\n\n\nfrom scipy.fft import fft, fftfreq\n\n\nyf = fft(y)\nxf = fftfreq(len(y), 1 / sr)\n\nplt.plot(xf, np.abs(yf), lw=0.1)\nplt.xlim((0, 1000))\n\n(0.0, 1000.0)\n\n\n\n\n\n\nplt.specgram(x = y,Fs=sr);\n#plt.ylim((0, 100))\nplt.colorbar()\n\n&lt;matplotlib.colorbar.Colorbar at 0x1424d5fd0&gt;\n\n\n\n\n\n\nsos = signal.butter(10, 20, 'lp', fs=sr, output='sos')\nfiltered = signal.sosfilt(sos, y)\nplt.plot(y)\nplt.plot(filtered)\n\n\n\n\n\nplt.plot(filtered)\n\n\n\n\n\nplt.specgram(x = filtered,Fs=sr);\n#plt.ylim((0, 100))\nplt.colorbar()\n\n&lt;matplotlib.colorbar.Colorbar at 0x1404d1d00&gt;"
+  },
+  {
     "objectID": "posts/welcome/index.html",
     "href": "posts/welcome/index.html",
     "title": "Welcome To My Blog",
@@ -18,7 +25,7 @@
     "href": "index.html",
     "title": "blogs",
     "section": "",
-    "text": "Post With Code\n\n\n\n\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\n\n\n\n\nJun 14, 2023\n\n\nHarlow Malloc\n\n\n\n\n\n\n  \n\n\n\n\nWelcome To My Blog\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nJun 11, 2023\n\n\nTristan O’Malley\n\n\n\n\n\n\nNo matching items"
+    "text": "Post With Code\n\n\n\n\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\n\n\n\n\nJun 14, 2023\n\n\nHarlow Malloc\n\n\n\n\n\n\n  \n\n\n\n\nWelcome To My Blog\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nJun 11, 2023\n\n\nTristan O’Malley\n\n\n\n\n\n\n  \n\n\n\n\nAudio Filtering\n\n\n\n\n\n\n\nML\n\n\n\n\n\n\n\n\n\n\n\nFeb 24, 2022\n\n\nNipun Batra\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "about.html",
