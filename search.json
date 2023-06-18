@@ -1,19 +1,5 @@
 [
   {
-    "objectID": "posts/post-with-code/index.html",
-    "href": "posts/post-with-code/index.html",
-    "title": "Post With Code",
-    "section": "",
-    "text": "This is a post with executable code."
-  },
-  {
-    "objectID": "posts/welcome/index.html",
-    "href": "posts/welcome/index.html",
-    "title": "Welcome To My Blog",
-    "section": "",
-    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
-  },
-  {
     "objectID": "posts/2023-06-18-Graph-Convoluntional-Layer-from-scratch.html",
     "href": "posts/2023-06-18-Graph-Convoluntional-Layer-from-scratch.html",
     "title": "Graph Convoluntional Layer from scratch",
@@ -25,7 +11,7 @@
     "href": "index.html",
     "title": "blogs",
     "section": "",
-    "text": "Graph Convoluntional Layer from scratch\n\n\n\n\n\n\n\nML\n\n\nGNN\n\n\n\n\n\n\n\n\n\n\n\nJun 18, 2023\n\n\nMihir Agarwal\n\n\n\n\n\n\n  \n\n\n\n\nPost With Code\n\n\n\n\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\n\n\n\n\nJun 14, 2023\n\n\nHarlow Malloc\n\n\n\n\n\n\n  \n\n\n\n\nWelcome To My Blog\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nJun 11, 2023\n\n\nTristan O’Malley\n\n\n\n\n\n\nNo matching items"
+    "text": "Graph Convoluntional Layer from scratch\n\n\n\n\n\n\n\nML\n\n\nGNN\n\n\n\n\n\n\n\n\n\n\n\nJun 18, 2023\n\n\nMihir Agarwal\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "about.html",
