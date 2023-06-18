@@ -197,9 +197,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
+<p>In this post I am implementing Graph Convolutional Layer</p>
 <section id="basic-imports" class="level1">
 <h1>Basic Imports</h1>
-<div class="cell" data-execution_count="14">
+<div class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -220,10 +221,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="importing-planetoid-dataset---cora" class="level1">
 <h1>Importing Planetoid dataset - Cora</h1>
-<div class="cell" data-execution_count="15">
+<div class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>dataset <span class="op">=</span> Planetoid(root<span class="op">=</span><span class="st">'data/Planetoid'</span>, name<span class="op">=</span><span class="st">'Cora'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="40">
+<div class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> visualize(h, color):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Perform t-SNE dimensionality reduction</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    z <span class="op">=</span> TSNE(n_components<span class="op">=</span><span class="dv">2</span>).fit_transform(h.detach().cpu().numpy())</span>
@@ -238,13 +239,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="visulization-of-the-dataset" class="level1">
 <h1>Visulization of the dataset</h1>
-<div class="cell" data-execution_count="41">
+<div class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>visualize(dataset[<span class="dv">0</span>].x, dataset[<span class="dv">0</span>].y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <p><img src="2023-06-18-Graph-Convoluntional-Layer-from-scratch_files/figure-html/cell-5-output-1.png" class="img-fluid"></p>
 </div>
 </div>
-<div class="cell" data-execution_count="19">
+<div class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># convert pytorch tensor to networkx graph</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> to_networkx(data):</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    G <span class="op">=</span> nx.Graph()</span>
@@ -252,13 +253,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    G.add_edges_from(data.edge_index.t().tolist())</span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> G</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="20">
+<div class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> to_networkx(dataset[<span class="dv">0</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="creating-the-adjacency-matrix" class="level1">
 <h1>Creating the Adjacency Matrix</h1>
-<div class="cell" data-execution_count="23">
+<div class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Adjacency matrix</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> nx.adjacency_matrix(G).todense()</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> torch.tensor(A, dtype<span class="op">=</span>torch.<span class="bu">float</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -269,7 +270,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The GCN layer is defined as follows:</p>
 <p><span class="math inline">\({H}^{(l+1)} = \sigma \left( \mathbf{D}^{-\frac{1}{2}} {\mathbf{\hat{A}}}  \mathbf{D}^{-\frac{1}{2}} \mathbf{H}^{(l)} \mathbf{W}^{(l)} \right)\)</span></p>
 <p>where <span class="math inline">\(\mathbf{H}^{(l)}\)</span> is the <span class="math inline">\(l^{th}\)</span> layer of the GCN, <span class="math inline">\(\mathbf{A}\)</span> is the adjacency matrix, <span class="math inline">\({\mathbf{\hat{A}}}\)</span> is the adjacency matrix with self-connections added, <span class="math inline">\(\mathbf{D}\)</span> is the degree matrix, and <span class="math inline">\(\mathbf{W}^{(l)}\)</span> is the weight matrix for the <span class="math inline">\(l^{th}\)</span> layer.</p>
-<div class="cell" data-execution_count="25">
+<div class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> GCN_Layer(nn.Module):</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, in_features, out_features):</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>(GCN_Layer, <span class="va">self</span>).<span class="fu">__init__</span>()</span>
@@ -288,7 +289,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="creating-the-model" class="level1">
 <h1>Creating the model</h1>
 <p>The model consists of two GCN layers and a linear layer for the output. We have used ReLU as the activation function.</p>
-<div class="cell" data-execution_count="33">
+<div class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> GNNModel(nn.Module):</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, in_features, out_features, classes):</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>(GNNModel, <span class="va">self</span>).<span class="fu">__init__</span>()</span>
@@ -307,9 +308,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="training-the-model" class="level1">
 <h1>Training the model</h1>
-<div class="cell" data-execution_count="51">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> torch.tensor(dataset[<span class="dv">0</span>].x, dtype<span class="op">=</span>torch.<span class="bu">float</span>)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> torch.tensor(dataset[<span class="dv">0</span>].y, dtype<span class="op">=</span>torch.<span class="bu">long</span>)</span>
+<div class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> dataset[<span class="dv">0</span>].x</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> dataset[<span class="dv">0</span>].y</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>in_features <span class="op">=</span> X.shape[<span class="dv">1</span>]  <span class="co"># Number of input features</span></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>hidden_dim <span class="op">=</span> <span class="dv">64</span>  <span class="co"># Number of hidden features</span></span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>classes <span class="op">=</span> <span class="dv">7</span>  <span class="co"># Number of classes</span></span>
@@ -336,122 +337,116 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Print the loss and accuracy for monitoring</span></span>
 <span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (epoch <span class="op">+</span> <span class="dv">1</span>) <span class="op">%</span> <span class="dv">1</span> <span class="op">==</span> <span class="dv">0</span>:</span>
 <span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f'Epoch [</span><span class="sc">{</span>epoch<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>num_epochs<span class="sc">}</span><span class="ss">], Loss: </span><span class="sc">{</span>loss<span class="sc">.</span>item()<span class="sc">:.4f}</span><span class="ss">, Accuracy: </span><span class="sc">{</span>accuracy<span class="sc">.</span>item()<span class="sc">:.4f}</span><span class="ss">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>/tmp/ipykernel_18480/3700216626.py:1: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
-  X = torch.tensor(dataset[0].x, dtype=torch.float)
-/tmp/ipykernel_18480/3700216626.py:2: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
-  y = torch.tensor(dataset[0].y, dtype=torch.long)</code></pre>
-</div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch [1/100], Loss: 1.9451, Accuracy: 0.1544
-Epoch [2/100], Loss: 1.9375, Accuracy: 0.2585
-Epoch [3/100], Loss: 1.9232, Accuracy: 0.3386
-Epoch [4/100], Loss: 1.8973, Accuracy: 0.3032
-Epoch [5/100], Loss: 1.8595, Accuracy: 0.3024
-Epoch [6/100], Loss: 1.8221, Accuracy: 0.3021
-Epoch [7/100], Loss: 1.7975, Accuracy: 0.3024
-Epoch [8/100], Loss: 1.7573, Accuracy: 0.3619
-Epoch [9/100], Loss: 1.6980, Accuracy: 0.4996
-Epoch [10/100], Loss: 1.6558, Accuracy: 0.5971
-Epoch [11/100], Loss: 1.6148, Accuracy: 0.6300
-Epoch [12/100], Loss: 1.5620, Accuracy: 0.6713
-Epoch [13/100], Loss: 1.5196, Accuracy: 0.6961
-Epoch [14/100], Loss: 1.4932, Accuracy: 0.7212
-Epoch [15/100], Loss: 1.4673, Accuracy: 0.7430
-Epoch [16/100], Loss: 1.4392, Accuracy: 0.7633
-Epoch [17/100], Loss: 1.4154, Accuracy: 0.7722
-Epoch [18/100], Loss: 1.4006, Accuracy: 0.7762
-Epoch [19/100], Loss: 1.3909, Accuracy: 0.7766
-Epoch [20/100], Loss: 1.3782, Accuracy: 0.7884
-Epoch [21/100], Loss: 1.3642, Accuracy: 0.8209
-Epoch [22/100], Loss: 1.3541, Accuracy: 0.8401
-Epoch [23/100], Loss: 1.3437, Accuracy: 0.8431
-Epoch [24/100], Loss: 1.3326, Accuracy: 0.8468
-Epoch [25/100], Loss: 1.3253, Accuracy: 0.8490
-Epoch [26/100], Loss: 1.3207, Accuracy: 0.8479
-Epoch [27/100], Loss: 1.3164, Accuracy: 0.8527
-Epoch [28/100], Loss: 1.3126, Accuracy: 0.8545
-Epoch [29/100], Loss: 1.3102, Accuracy: 0.8564
-Epoch [30/100], Loss: 1.3076, Accuracy: 0.8586
-Epoch [31/100], Loss: 1.3045, Accuracy: 0.8634
-Epoch [32/100], Loss: 1.3019, Accuracy: 0.8648
-Epoch [33/100], Loss: 1.3002, Accuracy: 0.8671
-Epoch [34/100], Loss: 1.2982, Accuracy: 0.8674
-Epoch [35/100], Loss: 1.2962, Accuracy: 0.8693
-Epoch [36/100], Loss: 1.2948, Accuracy: 0.8704
-Epoch [37/100], Loss: 1.2928, Accuracy: 0.8719
-Epoch [38/100], Loss: 1.2893, Accuracy: 0.8741
-Epoch [39/100], Loss: 1.2820, Accuracy: 0.8848
-Epoch [40/100], Loss: 1.2654, Accuracy: 0.9066
-Epoch [41/100], Loss: 1.2517, Accuracy: 0.9206
-Epoch [42/100], Loss: 1.2573, Accuracy: 0.9147
-Epoch [43/100], Loss: 1.2534, Accuracy: 0.9202
-Epoch [44/100], Loss: 1.2437, Accuracy: 0.9287
-Epoch [45/100], Loss: 1.2401, Accuracy: 0.9306
-Epoch [46/100], Loss: 1.2376, Accuracy: 0.9321
-Epoch [47/100], Loss: 1.2363, Accuracy: 0.9324
-Epoch [48/100], Loss: 1.2352, Accuracy: 0.9350
-Epoch [49/100], Loss: 1.2325, Accuracy: 0.9376
-Epoch [50/100], Loss: 1.2295, Accuracy: 0.9394
-Epoch [51/100], Loss: 1.2271, Accuracy: 0.9413
-Epoch [52/100], Loss: 1.2255, Accuracy: 0.9420
-Epoch [53/100], Loss: 1.2252, Accuracy: 0.9424
-Epoch [54/100], Loss: 1.2252, Accuracy: 0.9424
-Epoch [55/100], Loss: 1.2231, Accuracy: 0.9457
-Epoch [56/100], Loss: 1.2214, Accuracy: 0.9468
-Epoch [57/100], Loss: 1.2211, Accuracy: 0.9468
-Epoch [58/100], Loss: 1.2209, Accuracy: 0.9468
-Epoch [59/100], Loss: 1.2200, Accuracy: 0.9479
-Epoch [60/100], Loss: 1.2188, Accuracy: 0.9490
-Epoch [61/100], Loss: 1.2185, Accuracy: 0.9494
-Epoch [62/100], Loss: 1.2184, Accuracy: 0.9501
-Epoch [63/100], Loss: 1.2179, Accuracy: 0.9501
-Epoch [64/100], Loss: 1.2170, Accuracy: 0.9505
-Epoch [65/100], Loss: 1.2165, Accuracy: 0.9505
-Epoch [66/100], Loss: 1.2164, Accuracy: 0.9505
-Epoch [67/100], Loss: 1.2162, Accuracy: 0.9505
-Epoch [68/100], Loss: 1.2159, Accuracy: 0.9509
-Epoch [69/100], Loss: 1.2156, Accuracy: 0.9509
-Epoch [70/100], Loss: 1.2153, Accuracy: 0.9516
-Epoch [71/100], Loss: 1.2151, Accuracy: 0.9520
-Epoch [72/100], Loss: 1.2148, Accuracy: 0.9520
-Epoch [73/100], Loss: 1.2147, Accuracy: 0.9520
-Epoch [74/100], Loss: 1.2145, Accuracy: 0.9516
-Epoch [75/100], Loss: 1.2143, Accuracy: 0.9520
-Epoch [76/100], Loss: 1.2142, Accuracy: 0.9520
-Epoch [77/100], Loss: 1.2140, Accuracy: 0.9520
-Epoch [78/100], Loss: 1.2139, Accuracy: 0.9520
-Epoch [79/100], Loss: 1.2137, Accuracy: 0.9520
-Epoch [80/100], Loss: 1.2136, Accuracy: 0.9520
-Epoch [81/100], Loss: 1.2134, Accuracy: 0.9524
-Epoch [82/100], Loss: 1.2132, Accuracy: 0.9531
-Epoch [83/100], Loss: 1.2130, Accuracy: 0.9535
-Epoch [84/100], Loss: 1.2128, Accuracy: 0.9535
-Epoch [85/100], Loss: 1.2126, Accuracy: 0.9531
-Epoch [86/100], Loss: 1.2126, Accuracy: 0.9531
-Epoch [87/100], Loss: 1.2125, Accuracy: 0.9538
-Epoch [88/100], Loss: 1.2125, Accuracy: 0.9538
-Epoch [89/100], Loss: 1.2124, Accuracy: 0.9535
-Epoch [90/100], Loss: 1.2123, Accuracy: 0.9535
-Epoch [91/100], Loss: 1.2123, Accuracy: 0.9535
-Epoch [92/100], Loss: 1.2122, Accuracy: 0.9535
-Epoch [93/100], Loss: 1.2121, Accuracy: 0.9535
-Epoch [94/100], Loss: 1.2120, Accuracy: 0.9538
-Epoch [95/100], Loss: 1.2120, Accuracy: 0.9538
-Epoch [96/100], Loss: 1.2119, Accuracy: 0.9538
-Epoch [97/100], Loss: 1.2118, Accuracy: 0.9542
-Epoch [98/100], Loss: 1.2117, Accuracy: 0.9542
-Epoch [99/100], Loss: 1.2116, Accuracy: 0.9542
-Epoch [100/100], Loss: 1.2115, Accuracy: 0.9542</code></pre>
+<pre><code>Epoch [1/100], Loss: 1.9459, Accuracy: 0.0702
+Epoch [2/100], Loss: 1.9383, Accuracy: 0.3316
+Epoch [3/100], Loss: 1.9238, Accuracy: 0.3024
+Epoch [4/100], Loss: 1.8966, Accuracy: 0.3021
+Epoch [5/100], Loss: 1.8567, Accuracy: 0.3021
+Epoch [6/100], Loss: 1.8174, Accuracy: 0.3021
+Epoch [7/100], Loss: 1.7879, Accuracy: 0.3024
+Epoch [8/100], Loss: 1.7328, Accuracy: 0.4346
+Epoch [9/100], Loss: 1.6781, Accuracy: 0.5835
+Epoch [10/100], Loss: 1.6422, Accuracy: 0.5735
+Epoch [11/100], Loss: 1.5881, Accuracy: 0.6141
+Epoch [12/100], Loss: 1.5457, Accuracy: 0.6647
+Epoch [13/100], Loss: 1.5212, Accuracy: 0.6747
+Epoch [14/100], Loss: 1.5006, Accuracy: 0.6765
+Epoch [15/100], Loss: 1.4805, Accuracy: 0.6839
+Epoch [16/100], Loss: 1.4607, Accuracy: 0.6994
+Epoch [17/100], Loss: 1.4392, Accuracy: 0.7448
+Epoch [18/100], Loss: 1.4178, Accuracy: 0.7744
+Epoch [19/100], Loss: 1.4071, Accuracy: 0.7740
+Epoch [20/100], Loss: 1.4041, Accuracy: 0.7707
+Epoch [21/100], Loss: 1.3950, Accuracy: 0.7758
+Epoch [22/100], Loss: 1.3820, Accuracy: 0.7855
+Epoch [23/100], Loss: 1.3722, Accuracy: 0.7954
+Epoch [24/100], Loss: 1.3673, Accuracy: 0.7939
+Epoch [25/100], Loss: 1.3631, Accuracy: 0.7984
+Epoch [26/100], Loss: 1.3546, Accuracy: 0.8102
+Epoch [27/100], Loss: 1.3429, Accuracy: 0.8312
+Epoch [28/100], Loss: 1.3326, Accuracy: 0.8475
+Epoch [29/100], Loss: 1.3278, Accuracy: 0.8471
+Epoch [30/100], Loss: 1.3254, Accuracy: 0.8504
+Epoch [31/100], Loss: 1.3180, Accuracy: 0.8512
+Epoch [32/100], Loss: 1.3070, Accuracy: 0.8634
+Epoch [33/100], Loss: 1.2922, Accuracy: 0.8911
+Epoch [34/100], Loss: 1.2784, Accuracy: 0.9044
+Epoch [35/100], Loss: 1.2733, Accuracy: 0.9114
+Epoch [36/100], Loss: 1.2694, Accuracy: 0.9114
+Epoch [37/100], Loss: 1.2593, Accuracy: 0.9202
+Epoch [38/100], Loss: 1.2501, Accuracy: 0.9258
+Epoch [39/100], Loss: 1.2448, Accuracy: 0.9302
+Epoch [40/100], Loss: 1.2408, Accuracy: 0.9321
+Epoch [41/100], Loss: 1.2374, Accuracy: 0.9346
+Epoch [42/100], Loss: 1.2349, Accuracy: 0.9361
+Epoch [43/100], Loss: 1.2327, Accuracy: 0.9369
+Epoch [44/100], Loss: 1.2304, Accuracy: 0.9394
+Epoch [45/100], Loss: 1.2284, Accuracy: 0.9417
+Epoch [46/100], Loss: 1.2271, Accuracy: 0.9428
+Epoch [47/100], Loss: 1.2264, Accuracy: 0.9424
+Epoch [48/100], Loss: 1.2256, Accuracy: 0.9428
+Epoch [49/100], Loss: 1.2243, Accuracy: 0.9435
+Epoch [50/100], Loss: 1.2225, Accuracy: 0.9457
+Epoch [51/100], Loss: 1.2208, Accuracy: 0.9472
+Epoch [52/100], Loss: 1.2198, Accuracy: 0.9490
+Epoch [53/100], Loss: 1.2187, Accuracy: 0.9501
+Epoch [54/100], Loss: 1.2178, Accuracy: 0.9509
+Epoch [55/100], Loss: 1.2170, Accuracy: 0.9520
+Epoch [56/100], Loss: 1.2161, Accuracy: 0.9531
+Epoch [57/100], Loss: 1.2150, Accuracy: 0.9549
+Epoch [58/100], Loss: 1.2143, Accuracy: 0.9549
+Epoch [59/100], Loss: 1.2135, Accuracy: 0.9553
+Epoch [60/100], Loss: 1.2129, Accuracy: 0.9564
+Epoch [61/100], Loss: 1.2123, Accuracy: 0.9572
+Epoch [62/100], Loss: 1.2116, Accuracy: 0.9572
+Epoch [63/100], Loss: 1.2110, Accuracy: 0.9575
+Epoch [64/100], Loss: 1.2104, Accuracy: 0.9579
+Epoch [65/100], Loss: 1.2096, Accuracy: 0.9586
+Epoch [66/100], Loss: 1.2092, Accuracy: 0.9594
+Epoch [67/100], Loss: 1.2087, Accuracy: 0.9594
+Epoch [68/100], Loss: 1.2083, Accuracy: 0.9594
+Epoch [69/100], Loss: 1.2079, Accuracy: 0.9601
+Epoch [70/100], Loss: 1.2076, Accuracy: 0.9597
+Epoch [71/100], Loss: 1.2073, Accuracy: 0.9601
+Epoch [72/100], Loss: 1.2070, Accuracy: 0.9601
+Epoch [73/100], Loss: 1.2067, Accuracy: 0.9605
+Epoch [74/100], Loss: 1.2065, Accuracy: 0.9605
+Epoch [75/100], Loss: 1.2063, Accuracy: 0.9609
+Epoch [76/100], Loss: 1.2061, Accuracy: 0.9612
+Epoch [77/100], Loss: 1.2060, Accuracy: 0.9612
+Epoch [78/100], Loss: 1.2058, Accuracy: 0.9612
+Epoch [79/100], Loss: 1.2057, Accuracy: 0.9612
+Epoch [80/100], Loss: 1.2054, Accuracy: 0.9616
+Epoch [81/100], Loss: 1.2053, Accuracy: 0.9616
+Epoch [82/100], Loss: 1.2051, Accuracy: 0.9616
+Epoch [83/100], Loss: 1.2050, Accuracy: 0.9616
+Epoch [84/100], Loss: 1.2050, Accuracy: 0.9616
+Epoch [85/100], Loss: 1.2049, Accuracy: 0.9616
+Epoch [86/100], Loss: 1.2049, Accuracy: 0.9616
+Epoch [87/100], Loss: 1.2048, Accuracy: 0.9616
+Epoch [88/100], Loss: 1.2047, Accuracy: 0.9616
+Epoch [89/100], Loss: 1.2046, Accuracy: 0.9616
+Epoch [90/100], Loss: 1.2044, Accuracy: 0.9616
+Epoch [91/100], Loss: 1.2042, Accuracy: 0.9623
+Epoch [92/100], Loss: 1.2041, Accuracy: 0.9620
+Epoch [93/100], Loss: 1.2041, Accuracy: 0.9620
+Epoch [94/100], Loss: 1.2040, Accuracy: 0.9620
+Epoch [95/100], Loss: 1.2039, Accuracy: 0.9623
+Epoch [96/100], Loss: 1.2038, Accuracy: 0.9627
+Epoch [97/100], Loss: 1.2037, Accuracy: 0.9627
+Epoch [98/100], Loss: 1.2036, Accuracy: 0.9627
+Epoch [99/100], Loss: 1.2036, Accuracy: 0.9627
+Epoch [100/100], Loss: 1.2036, Accuracy: 0.9627</code></pre>
 </div>
 </div>
-<div class="cell" data-execution_count="52">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>output <span class="op">=</span> gcn_layer(A, X)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>y_pred <span class="op">=</span> output.argmax(dim<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> dataset[<span class="dv">0</span>].y</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'Accuracy of GCN model: </span><span class="sc">{</span><span class="bu">float</span>(((y <span class="op">==</span> y_pred).<span class="bu">sum</span>()) <span class="op">/</span> <span class="bu">len</span>(y))<span class="op">*</span><span class="dv">100</span><span class="sc">}</span><span class="ss">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>output <span class="op">=</span> gcn_layer(A, X)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>y_pred <span class="op">=</span> output.argmax(dim<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> dataset[<span class="dv">0</span>].y</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'Accuracy of GCN model: </span><span class="sc">{</span><span class="bu">float</span>(((y <span class="op">==</span> y_pred).<span class="bu">sum</span>()) <span class="op">/</span> <span class="bu">len</span>(y))<span class="op">*</span><span class="dv">100</span><span class="sc">}</span><span class="ss">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Accuracy of GCN model: 95.42097449302673</code></pre>
+<pre><code>Accuracy of GCN model: 96.27031087875366</code></pre>
 </div>
 </div>
 
