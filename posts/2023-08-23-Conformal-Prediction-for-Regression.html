@@ -9,7 +9,7 @@
 <meta name="author" content="Mihir Agarwal">
 <meta name="dcterms.date" content="2023-08-23">
 
-<title>blogs - Graph Convoluntional Layer from scratch</title>
+<title>blogs - Conformal Prediction for Regression</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -148,7 +148,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Graph Convoluntional Layer from scratch</h1>
+      <h1 class="title">Conformal Prediction for Regression</h1>
                                 <div class="quarto-categories">
                 <div class="quarto-category">ML</div>
                 <div class="quarto-category">Uncertainty</div>
@@ -204,7 +204,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<p>In this post I am implementing Conformal Prediction for Regression</p>
 <section id="the-importance-of-uncertainty-in-a-model" class="level1">
 <h1>The Importance of Uncertainty in a Model</h1>
 <p>Uncertainty is a pivotal factor in machine learning and predictive models. It highlights the extent of confidence and potential errors in predictions, which is essential for making well-informed decisions. Uncertainty arises due to limited data, model complexity, measurement noise, and assumptions. Recognizing uncertainty is crucial as it aids in decision-making, risk assessment, and model selection. It also guides adaptation to new data and allows for better comparison between different models. Two primary uncertainty types are epistemic (model-related) and aleatoric (data-related). Conformal prediction provides a way to quantify uncertainty by creating prediction regions with defined probabilities, enhancing the reliability of machine learning applications.</p>
@@ -225,7 +224,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The prediction set <span class="math inline">\(C(X_{\text{test}})\)</span> contains all potential outputs <span class="math inline">\(y\)</span> that have a score <span class="math inline">\(s(X_{\text{test}}, y)\)</span> within the estimated quantile <span class="math inline">\(\hat{q}\)</span>. This set defines the prediction region for the new example.</p></li>
 </ol>
 <p>This algorithm leverages the model’s score function and the quantile of calibration scores to construct prediction sets for new input examples. These prediction sets provide a measure of uncertainty and reliability associated with the model’s predictions in a wide range of scenarios.</p>
-<div class="cell" data-execution_count="66">
+<div class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn <span class="im">as</span> nn</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -235,7 +234,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">42</span>)</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="67">
+<div class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_simple_data_train(coef_1, coef_2, coef_3, coef_4, n_cal):</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"running simple data"</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Generate data points for the custom function with some noise</span></span>
@@ -254,7 +253,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    x_train, y_train <span class="op">=</span> x[<span class="op">~</span>mask], y[<span class="op">~</span>mask]</span>
 <span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x_train, y_train, x_cal, y_cal</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="68">
+<div class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plot_generic(_x_train, _y_train, _x_cal, _y_cal, _add_to_plot<span class="op">=</span><span class="va">None</span>, coef_1<span class="op">=</span><span class="fl">0.3</span>, coef_2<span class="op">=</span><span class="fl">0.02</span>, coef_3<span class="op">=</span><span class="fl">0.1</span>, coef_4<span class="op">=</span><span class="fl">0.02</span>):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># print("running plot_generic")</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
@@ -287,30 +286,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fig, ax</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="69">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>x_train, y_train, x_cal, y_cal <span class="op">=</span> get_simple_data_train(coef_1, coef_2, coef_3, coef_4, n_cal)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>coef_1 <span class="op">=</span> <span class="fl">0.3</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>coef_2 <span class="op">=</span> <span class="fl">0.3</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>coef_3 <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>coef_4 <span class="op">=</span> <span class="fl">0.3</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>n_cal <span class="op">=</span> <span class="dv">500</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>x_train, y_train, x_cal, y_cal <span class="op">=</span> get_simple_data_train(coef_1, coef_2, coef_3, coef_4, n_cal)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>running simple data
 running regression data</code></pre>
 </div>
 </div>
-<div class="cell" data-execution_count="70">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>coef_1 <span class="op">=</span> <span class="fl">0.3</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>coef_2 <span class="op">=</span> <span class="fl">0.3</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>coef_3 <span class="op">=</span> <span class="fl">0.1</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>coef_4 <span class="op">=</span> <span class="fl">0.3</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>n_cal <span class="op">=</span> <span class="dv">500</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>plot_generic(x_train, y_train, x_cal, y_cal, coef_1<span class="op">=</span>coef_1, coef_2<span class="op">=</span>coef_2, coef_3<span class="op">=</span>coef_3, coef_4<span class="op">=</span>coef_4)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>plt.show(),</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="70">
-<pre><code>(&lt;Figure size 1000x500 with 1 Axes&gt;,
- &lt;Axes: title={'center': 'Plot of Training and Calibration Data with True Function'}, xlabel='X', ylabel='Y'&gt;)</code></pre>
-</div>
+<div class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>plot_generic(x_train, y_train, x_cal, y_cal, coef_1<span class="op">=</span>coef_1, coef_2<span class="op">=</span>coef_2, coef_3<span class="op">=</span>coef_3, coef_4<span class="op">=</span>coef_4)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>plt.show(),</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="2023-08-23-Conformal-Prediction-for-Regression_files/figure-html/cell-6-output-2.png" class="img-fluid"></p>
+<p><img src="2023-08-23-Conformal-Prediction-for-Regression_files/figure-html/cell-6-output-1.png" class="img-fluid"></p>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="12">
+<pre><code>(None,)</code></pre>
 </div>
 </div>
-<div class="cell" data-execution_count="71">
+<div class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MLP(nn.Module):</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, input_dim<span class="op">=</span><span class="dv">1</span>, output_dim<span class="op">=</span><span class="dv">1</span>, hidden_dim<span class="op">=</span><span class="dv">10</span>, n_hidden_layers<span class="op">=</span><span class="dv">1</span>, use_dropout<span class="op">=</span><span class="va">False</span>):</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
@@ -339,7 +337,7 @@ running regression data</code></pre>
 <span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>        output_mean <span class="op">=</span> <span class="va">self</span>.layers[<span class="op">-</span><span class="dv">1</span>](hidden).squeeze()</span>
 <span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> output_mean</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="72">
+<div class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> train(net, train_data):</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    x_train, y_train <span class="op">=</span> train_data</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    optimizer <span class="op">=</span> torch.optim.Adam(params<span class="op">=</span>net.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>)</span>
@@ -354,7 +352,7 @@ running regression data</code></pre>
 <span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        optimizer.step()</span>
 <span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> net</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="73">
+<div class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plot_predictions(_x_train, _y_train, _x_cal, _y_cal, _x_test, _y_preds, coef_1<span class="op">=</span><span class="fl">0.3</span>, coef_2<span class="op">=</span><span class="fl">0.02</span>, coef_3<span class="op">=</span><span class="fl">0.1</span>, coef_4<span class="op">=</span><span class="fl">0.02</span>):</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># print("running predictions")</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> add_predictions(ax):</span>
@@ -364,27 +362,24 @@ running regression data</code></pre>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    plt.title(<span class="st">"Plot of Training, Calibration, and Neural Network Predictions"</span>, fontsize<span class="op">=</span><span class="dv">15</span>)</span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fig, ax</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="74">
+<div class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>net <span class="op">=</span> MLP(hidden_dim<span class="op">=</span><span class="dv">30</span>, n_hidden_layers<span class="op">=</span><span class="dv">2</span>)</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>net <span class="op">=</span> train(net, (x_train, y_train))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <script type="application/vnd.jupyter.widget-view+json">
-{"model_id":"70e9b08cff044aa288c4c0596c038dc0","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+{"model_id":"d18c8d1269b943478d4fdee3eac14cd9","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
 </script>
 </div>
 </div>
-<div class="cell" data-execution_count="75">
+<div class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># compute predictions everywhere</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>x_test <span class="op">=</span> torch.linspace(<span class="op">-</span><span class="fl">.5</span>, <span class="fl">1.5</span>, <span class="dv">1000</span>)[:, <span class="va">None</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="86">
+<div class="cell" data-execution_count="18">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>plot_predictions(x_train, y_train, x_cal, y_cal, x_test, y_preds, coef_1<span class="op">=</span>coef_1, coef_2<span class="op">=</span>coef_2, coef_3<span class="op">=</span>coef_3, coef_4<span class="op">=</span>coef_4)</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>plt.show(),</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display">
-<p><img src="2023-08-23-Conformal-Prediction-for-Regression_files/figure-html/cell-12-output-1.png" class="img-fluid"></p>
-</div>
-<div class="cell-output cell-output-display" data-execution_count="86">
-<pre><code>(None,)</code></pre>
+<div class="cell-output cell-output-error">
+<pre><code>NameError: name 'y_preds' is not defined</code></pre>
 </div>
 </div>
 </section>
@@ -394,11 +389,11 @@ running regression data</code></pre>
 </section>
 <section id="s_i-y_i---haty_i" class="level1">
 <h1><span class="math display">\[s_i = |y_i - \hat{y}_i|\]</span></h1>
-<div class="cell" data-execution_count="81">
+<div class="cell" data-execution_count="19">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>y_cal_preds <span class="op">=</span> net(x_cal).detach().numpy()</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>scores <span class="op">=</span> torch.<span class="bu">abs</span>(y_cal <span class="op">-</span> y_cal_preds)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="84">
+<div class="cell" data-execution_count="20">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">3</span>))</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot scores of calibration data</span></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].bar(np.arange(<span class="bu">len</span>(scores)), height <span class="op">=</span> scores, alpha <span class="op">=</span> <span class="fl">0.7</span>, color <span class="op">=</span> <span class="st">'b'</span>)</span>
@@ -412,14 +407,14 @@ running regression data</code></pre>
 <span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_ylabel(<span class="st">'Frequency'</span>)</span>
 <span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_title(<span class="st">'Histogram of Scores with Quantile Line'</span>)</span>
 <span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>plt.show(),</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="84">
-<pre><code>Text(0.5, 1.0, 'Histogram of Scores with Quantile Line')</code></pre>
-</div>
 <div class="cell-output cell-output-display">
-<p><img src="2023-08-23-Conformal-Prediction-for-Regression_files/figure-html/cell-14-output-2.png" class="img-fluid"></p>
+<p><img src="2023-08-23-Conformal-Prediction-for-Regression_files/figure-html/cell-14-output-1.png" class="img-fluid"></p>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="20">
+<pre><code>(None,)</code></pre>
 </div>
 </div>
-<div class="cell" data-execution_count="87">
+<div class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> <span class="fl">0.1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>

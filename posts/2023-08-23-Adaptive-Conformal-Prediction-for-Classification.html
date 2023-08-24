@@ -9,7 +9,7 @@
 <meta name="author" content="Mihir Agarwal">
 <meta name="dcterms.date" content="2023-08-23">
 
-<title>blogs - Graph Convoluntional Layer from scratch</title>
+<title>blogs - Adaptive Conformal Prediction for Classification</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -144,7 +144,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Graph Convoluntional Layer from scratch</h1>
+      <h1 class="title">Adaptive Conformal Prediction for Classification</h1>
                                 <div class="quarto-categories">
                 <div class="quarto-category">ML</div>
                 <div class="quarto-category">Uncertainty</div>
@@ -192,7 +192,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<p>In this post I am implementing Conformal Prediction for Regression</p>
 <section id="adaptive-conformal-prediction-for-uncertainty-estimation-in-classification" class="level1">
 <h1>Adaptive Conformal Prediction for Uncertainty Estimation in Classification</h1>
 <p>In this section, we introduce a procedure for obtaining uncertainty estimates for classification predictions using Conformal Prediction. We start with an initial heuristic notion of uncertainty based on the softmax outputs of the model’s predictions. The goal is to refine this heuristic using the rigorous framework of conformal prediction.</p>
@@ -205,7 +204,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p><strong>Forming the Prediction Set</strong>: To create the prediction set, we modify the procedure slightly to avoid zero-size sets. We construct the set <span class="math inline">\(\pi_1(x), \ldots, \pi_k(x)\)</span> where <span class="math inline">\(k = \sup\{ k' : k' = 0 \text{ or } \sum_{j=1}^{k'} \pi_j(x) &lt; \hat{q} \} + 1\)</span>.</p></li>
 </ol>
 <p>By applying this conformal prediction procedure, we enhance the heuristic uncertainty into a more rigorous and reliable notion. The resulting prediction set <span class="math inline">\(C(x)\)</span> provides insights into the uncertainty associated with the model’s predictions for input <span class="math inline">\(x\)</span>, enhancing the model’s reliability in classification tasks.</p>
-<div class="cell" data-execution_count="37">
+<div class="cell" data-execution_count="62">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn <span class="im">as</span> nn</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -216,7 +215,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">42</span>)</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="38">
+<div class="cell" data-execution_count="63">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_data():</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    train_dataset <span class="op">=</span> datasets.MNIST(root<span class="op">=</span><span class="st">'blogs/posts/data'</span>, train<span class="op">=</span><span class="va">True</span>, download<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    test_dataset <span class="op">=</span> datasets.MNIST(root<span class="op">=</span><span class="st">'blogs/posts/data'</span>, train<span class="op">=</span><span class="va">False</span>, download<span class="op">=</span><span class="va">True</span>)</span>
@@ -232,10 +231,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> X_train, y_train, X_test, y_test, X_calib, y_calib</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="39">
+<div class="cell" data-execution_count="64">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>X_train, y_train, X_test, y_test, X_calib, y_calib <span class="op">=</span> get_data()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="40">
+<div class="cell" data-execution_count="65">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MLP(nn.Module):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>(MLP, <span class="va">self</span>).<span class="fu">__init__</span>()</span>
@@ -249,7 +248,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> <span class="va">self</span>.fc2(x)</span>
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> x</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="41">
+<div class="cell" data-execution_count="66">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> train(_net, _train_data):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    X_train, y_train <span class="op">=</span> _train_data</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    train_dataset <span class="op">=</span> torch.utils.data.TensorDataset(X_train, y_train)</span>
@@ -275,11 +274,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> _net</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="42">
+<div class="cell" data-execution_count="67">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>net <span class="op">=</span> MLP()</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>net <span class="op">=</span> train(net, (X_train, y_train))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="43">
+<div class="cell" data-execution_count="68">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>y_test_pred <span class="op">=</span> torch.argmax(net(X_test), dim <span class="op">=</span> <span class="dv">1</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>accuracy <span class="op">=</span> (y_test_pred <span class="op">==</span> y_test).<span class="bu">sum</span>()<span class="op">/</span><span class="bu">len</span>(y_test)</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"accuracy : </span><span class="sc">{</span>accuracy<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -287,23 +286,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>accuracy : 0.9197999835014343</code></pre>
 </div>
 </div>
-<div class="cell" data-execution_count="44">
+<div class="cell" data-execution_count="69">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">500</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="45">
+<div class="cell" data-execution_count="70">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>cal_smx, val_smx <span class="op">=</span> net(X_calib).softmax(dim <span class="op">=</span> <span class="dv">1</span>).detach().numpy(), net(X_test).softmax(dim <span class="op">=</span> <span class="dv">1</span>).detach().numpy()</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>cal_labels, val_labels <span class="op">=</span> y_calib.numpy(), y_test.numpy()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="46">
+<div class="cell" data-execution_count="71">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>cal_smx.shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="46">
+<div class="cell-output cell-output-display" data-execution_count="71">
 <pre><code>(500, 10)</code></pre>
 </div>
 </div>
-<div class="cell" data-execution_count="47">
+<div class="cell" data-execution_count="72">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> <span class="fl">0.3</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="48">
+<div class="cell" data-execution_count="73">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>cal_pi <span class="op">=</span> cal_smx.argsort(<span class="dv">1</span>)[:, ::<span class="op">-</span><span class="dv">1</span>]</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>cal_srt <span class="op">=</span> np.take_along_axis(cal_smx, cal_pi, axis<span class="op">=</span><span class="dv">1</span>).cumsum(axis<span class="op">=</span><span class="dv">1</span>)</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>cal_scores <span class="op">=</span> np.take_along_axis(cal_srt, cal_pi.argsort(axis<span class="op">=</span><span class="dv">1</span>), axis<span class="op">=</span><span class="dv">1</span>)[</span>
@@ -324,7 +323,7 @@ Users of the modes 'nearest', 'lower', 'higher', or 'midpoint' are encouraged to
   qhat = np.quantile(</code></pre>
 </div>
 </div>
-<div class="cell" data-execution_count="49">
+<div class="cell" data-execution_count="74">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate empirical coverage</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>empirical_coverage <span class="op">=</span> prediction_sets[</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    np.arange(prediction_sets.shape[<span class="dv">0</span>]), val_labels</span>
@@ -334,7 +333,7 @@ Users of the modes 'nearest', 'lower', 'higher', or 'midpoint' are encouraged to
 <pre><code>The empirical coverage is: 0.7293</code></pre>
 </div>
 </div>
-<div class="cell" data-execution_count="50">
+<div class="cell" data-execution_count="75">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">3</span>))</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot scores of calibration data</span></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].bar(np.arange(<span class="bu">len</span>(cal_scores)), height <span class="op">=</span> cal_scores, alpha <span class="op">=</span> <span class="fl">0.7</span>, color <span class="op">=</span> <span class="st">'b'</span>)</span>
@@ -352,17 +351,17 @@ Users of the modes 'nearest', 'lower', 'higher', or 'midpoint' are encouraged to
 <div class="cell-output cell-output-display">
 <p><img src="2023-08-23-Adaptive-Conformal-Prediction-for-Classification_files/figure-html/cell-15-output-1.png" class="img-fluid"></p>
 </div>
-<div class="cell-output cell-output-display" data-execution_count="50">
+<div class="cell-output cell-output-display" data-execution_count="75">
 <pre><code>(None,)</code></pre>
 </div>
 </div>
-<div class="cell" data-execution_count="51">
+<div class="cell" data-execution_count="76">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> class_label(i):</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> {<span class="dv">0</span>: <span class="st">"0"</span>, <span class="dv">1</span>: <span class="st">"1"</span>, <span class="dv">2</span>: <span class="st">"2"</span>, <span class="dv">3</span>: <span class="st">"3"</span>, <span class="dv">4</span>: <span class="st">"4"</span>, </span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>                <span class="dv">5</span>: <span class="st">"5"</span>, <span class="dv">6</span>: <span class="st">"6"</span>, <span class="dv">7</span>: <span class="st">"7"</span>, <span class="dv">8</span>: <span class="st">"8"</span>, <span class="dv">9</span>: <span class="st">"9"</span>}</span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> labels[i]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="52">
+<div class="cell" data-execution_count="77">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_pred_str(pred):</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    pred_str <span class="op">=</span> <span class="st">"{"</span></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> pred:</span>
@@ -370,7 +369,7 @@ Users of the modes 'nearest', 'lower', 'higher', or 'midpoint' are encouraged to
 <span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    pred_str <span class="op">=</span> pred_str.rstrip(<span class="st">', '</span>) <span class="op">+</span> <span class="st">"}"</span>  <span class="co"># Remove the trailing comma and add closing curly brace</span></span>
 <span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> pred_str</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-execution_count="61">
+<div class="cell" data-execution_count="78">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>index <span class="op">=</span> <span class="dv">300</span></span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>img_pi <span class="op">=</span> val_smx[index].argsort()[::<span class="op">-</span><span class="dv">1</span>]</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>img_srt <span class="op">=</span> np.take_along_axis(val_smx[index], img_pi, axis<span class="op">=</span><span class="dv">0</span>).cumsum()</span>
