@@ -1,15 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://agarwal-mihir.github.io/blogs/posts/2023-08-23-Conformal-Prediction-for-Regression.html</loc>
+    <lastmod>2023-08-24T04:46:19.234Z</lastmod>
+  </url>
+  <url>
+    <loc>https://agarwal-mihir.github.io/blogs/posts/2023-08-23-Conformal-Prediction-for-Classification.html</loc>
+    <lastmod>2023-08-24T04:46:19.599Z</lastmod>
+  </url>
+  <url>
     <loc>https://agarwal-mihir.github.io/blogs/posts/2023-06-18-Graph-Convoluntional-Layer-from-scratch.html</loc>
-    <lastmod>2023-06-18T12:54:31.549Z</lastmod>
+    <lastmod>2023-08-24T04:46:19.939Z</lastmod>
+  </url>
+  <url>
+    <loc>https://agarwal-mihir.github.io/blogs/posts/2023-08-23-Adaptive-Conformal-Prediction-for-Classification.html</loc>
+    <lastmod>2023-08-24T04:46:20.321Z</lastmod>
   </url>
   <url>
     <loc>https://agarwal-mihir.github.io/blogs/index.html</loc>
-    <lastmod>2023-06-18T12:54:31.888Z</lastmod>
+    <lastmod>2023-08-24T04:46:20.777Z</lastmod>
   </url>
   <url>
     <loc>https://agarwal-mihir.github.io/blogs/about.html</loc>
-    <lastmod>2023-06-18T12:54:32.150Z</lastmod>
+    <lastmod>2023-08-24T04:46:21.018Z</lastmod>
   </url>
 </urlset>
